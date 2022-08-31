@@ -1,7 +1,12 @@
 use bevy::prelude::*;
-use bevy_life::{ConwayCellState, GameOfLife2dPlugin, MooreCell2d, SimulationBatch};
+use bevy_life::{
+    ConwayCellState, GameOfLife2dPlugin, MooreCell2d, SimulationBatch, SimulationPause,
+};
 use rand::Rng;
 use std::collections::HashSet;
+
+struct PauseTimer(Timer);
+struct PauseToggle(bool);
 
 fn main() {
     App::new()
@@ -16,6 +21,7 @@ fn main() {
         .insert_resource(SimulationBatch::default())
         .add_startup_system(setup_camera)
         .add_startup_system(setup_map)
+        .add_system(toggle_pause)
         .run();
 }
 
@@ -63,12 +69,15 @@ fn spawn_map(commands: &mut Commands) {
                 }
             }
         });
+    commands.insert_resource(PauseTimer(Timer::from_seconds(2.0, true)));
+    commands.insert_resource(PauseToggle(false));
+
     println!("map generated");
 }
 
 fn random_map(size_x: i32, size_y: i32) -> HashSet<(i32, i32)> {
     let mut rng = rand::thread_rng();
-    let mut live_cells: HashSet<(i32, i32)>  = HashSet::new();
+    let mut live_cells: HashSet<(i32, i32)> = HashSet::new();
 
     for y in 0..=size_y {
         for x in 0..=size_x {
@@ -79,4 +88,20 @@ fn random_map(size_x: i32, size_y: i32) -> HashSet<(i32, i32)> {
     }
 
     live_cells
+}
+
+fn toggle_pause(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut timer: ResMut<PauseTimer>,
+    mut toggled: ResMut<PauseToggle>,
+) {
+    if timer.0.tick(time.delta()).just_finished() {
+        if toggled.0 {
+            commands.remove_resource::<SimulationPause>();
+        } else {
+            commands.insert_resource(SimulationPause);
+        }
+        toggled.0 = !toggled.0;
+    }
 }
