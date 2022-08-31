@@ -5,8 +5,12 @@ use bevy_life::{
 use rand::Rng;
 use std::collections::HashSet;
 
-struct PauseTimer(Timer);
-struct PauseToggle(bool);
+enum PauseState {
+    Paused,
+    WaitFrame,
+    Unpaused,
+}
+struct PauseSwitch(PauseState);
 
 fn main() {
     App::new()
@@ -22,6 +26,7 @@ fn main() {
         .add_startup_system(setup_camera)
         .add_startup_system(setup_map)
         .add_system(toggle_pause)
+        .add_system(keyboard_input)
         .run();
 }
 
@@ -69,8 +74,8 @@ fn spawn_map(commands: &mut Commands) {
                 }
             }
         });
-    commands.insert_resource(PauseTimer(Timer::from_seconds(2.0, true)));
-    commands.insert_resource(PauseToggle(false));
+    commands.insert_resource(PauseSwitch(PauseState::Paused));
+    commands.insert_resource(SimulationPause);
 
     println!("map generated");
 }
@@ -90,18 +95,32 @@ fn random_map(size_x: i32, size_y: i32) -> HashSet<(i32, i32)> {
     live_cells
 }
 
-fn toggle_pause(
-    mut commands: Commands,
-    time: Res<Time>,
-    mut timer: ResMut<PauseTimer>,
-    mut toggled: ResMut<PauseToggle>,
-) {
-    if timer.0.tick(time.delta()).just_finished() {
-        if toggled.0 {
-            commands.remove_resource::<SimulationPause>();
-        } else {
+fn toggle_pause(mut commands: Commands, mut paused: ResMut<PauseSwitch>) {
+    match paused.0 {
+        PauseState::Paused => (),
+        PauseState::WaitFrame => {
             commands.insert_resource(SimulationPause);
+            paused.0 = PauseState::Paused
         }
-        toggled.0 = !toggled.0;
+        PauseState::Unpaused => {
+            paused.0 = PauseState::WaitFrame;
+        }
+    }
+}
+
+fn keyboard_input(
+    keys: Res<Input<KeyCode>>,
+    mut commands: Commands,
+    mut paused: ResMut<PauseSwitch>,
+) {
+    if keys.just_pressed(KeyCode::Space) {
+        match paused.0 {
+            PauseState::Paused => {
+                commands.remove_resource::<SimulationPause>();
+                paused.0 = PauseState::Unpaused;
+            }
+            PauseState::WaitFrame => (),
+            PauseState::Unpaused => (),
+        }
     }
 }
