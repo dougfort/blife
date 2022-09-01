@@ -43,7 +43,8 @@ fn spawn_map(commands: &mut Commands) {
     let (size_x, size_y) = (300, 200);
     let sprite_size = 4.;
     let color = Color::rgba(0., 0., 0., 0.);
-    let live_cells = random_map(size_x, size_y);
+    //    let live_cells = random_map(size_x, size_y);
+    let live_cells = blinker_map(size_x, size_y);
 
     commands
         .spawn_bundle(SpatialBundle::from_transform(Transform::from_xyz(
@@ -80,21 +81,6 @@ fn spawn_map(commands: &mut Commands) {
     println!("map generated");
 }
 
-fn random_map(size_x: i32, size_y: i32) -> HashSet<(i32, i32)> {
-    let mut rng = rand::thread_rng();
-    let mut live_cells: HashSet<(i32, i32)> = HashSet::new();
-
-    for y in 0..=size_y {
-        for x in 0..=size_x {
-            if rng.gen_bool(1. / 3.) {
-                live_cells.insert((x, y));
-            }
-        }
-    }
-
-    live_cells
-}
-
 fn toggle_pause(mut commands: Commands, mut paused: ResMut<PauseSwitch>) {
     match paused.0 {
         PauseState::Paused => (),
@@ -123,4 +109,33 @@ fn keyboard_input(
             PauseState::Unpaused => (),
         }
     }
+}
+
+fn random_map(size_x: i32, size_y: i32) -> HashSet<(i32, i32)> {
+    let mut rng = rand::thread_rng();
+    let mut live_cells: HashSet<(i32, i32)> = HashSet::new();
+
+    for y in 0..=size_y {
+        for x in 0..=size_x {
+            if rng.gen_bool(1. / 3.) {
+                live_cells.insert((x, y));
+            }
+        }
+    }
+
+    live_cells
+}
+
+fn zero_zero_map(_size_x: i32, _size_y: i32) -> HashSet<(i32, i32)> {
+    let mut live_cells: HashSet<(i32, i32)> = HashSet::new();
+    live_cells.insert((0, 0));
+    live_cells
+}
+
+fn blinker_map(_size_x: i32, _size_y: i32) -> HashSet<(i32, i32)> {
+    let mut live_cells: HashSet<(i32, i32)> = HashSet::new();
+    live_cells.insert((3, 0));
+    live_cells.insert((3, 1));
+    live_cells.insert((3, 2));
+    live_cells
 }
