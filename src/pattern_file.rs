@@ -3,6 +3,8 @@ use std::collections::HashSet;
 use std::fs::File;
 use std::io::{self, BufRead};
 
+/// A pattern file is a file containing a list of patterns, one per line.
+/// https://conwaylife.com/wiki/Plaintext
 pub fn load_pattern(filename: &str) -> Result<HashSet<(i32, i32)>> {
     let mut live_cells: HashSet<(i32, i32)> = HashSet::new();
     let file = File::open(filename)?;
