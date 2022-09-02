@@ -54,8 +54,6 @@ fn spawn_map(commands: &mut Commands, args: &cli::Args) {
     let (size_x, size_y) = (300, 200);
     let sprite_size = 4.;
     let color = Color::rgba(0., 0., 0., 0.);
-    //    let live_cells = random_map(size_x, size_y);
-    //    let live_cells = blinker_map(size_x, size_y);
     let live_cells = if args.pattern_file.is_empty() {
         random_map(size_x, size_y)
     } else {
