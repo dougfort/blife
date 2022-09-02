@@ -5,6 +5,8 @@ use bevy_life::{
 use rand::Rng;
 use std::collections::HashSet;
 
+mod pattern_file;
+
 enum PauseState {
     Paused,
     WaitFrame,
@@ -44,7 +46,8 @@ fn spawn_map(commands: &mut Commands) {
     let sprite_size = 4.;
     let color = Color::rgba(0., 0., 0., 0.);
     //    let live_cells = random_map(size_x, size_y);
-    let live_cells = blinker_map(size_x, size_y);
+//    let live_cells = blinker_map(size_x, size_y);
+    let live_cells = pattern_file::load_pattern("patterns/glider.cells").expect("Unable to load pattern");
 
     commands
         .spawn_bundle(SpatialBundle::from_transform(Transform::from_xyz(

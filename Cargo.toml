@@ -17,6 +17,9 @@ default = ["2D"]
 3D = []
 auto-coloring = ["bevy/bevy_sprite"]
 
+[dependencies]
+anyhow = "1.0"
+
 [dependencies.bevy_life]
 version  = "0.5.0"
 features = ["auto-coloring", "2D"]
