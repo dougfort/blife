@@ -6,6 +6,7 @@ use rand::Rng;
 use std::collections::HashSet;
 
 mod pattern_file;
+mod cli;
 
 enum PauseState {
     Paused,
@@ -15,7 +16,7 @@ enum PauseState {
 struct PauseSwitch(PauseState);
 
 fn main() {
-    let args = Args::from_args();
+    let args = cli::parse_args();
     let step = args.step;
 
     let mut app = App::new();
@@ -45,11 +46,11 @@ fn setup_camera(mut commands: Commands) {
     commands.spawn_bundle(Camera2dBundle::default());
 }
 
-fn setup_map(mut commands: Commands, args: Res<Args>) {
+fn setup_map(mut commands: Commands, args: Res<cli::Args>) {
     spawn_map(&mut commands, &*args);
 }
 
-fn spawn_map(commands: &mut Commands, args: &Args) {
+fn spawn_map(commands: &mut Commands, args: &cli::Args) {
     let (size_x, size_y) = (300, 200);
     let sprite_size = 4.;
     let color = Color::rgba(0., 0., 0., 0.);
@@ -95,8 +96,7 @@ fn spawn_map(commands: &mut Commands, args: &Args) {
     println!("map generated");
 }
 
-fn toggle_pause(args: Res<Args>, mut commands: Commands, mut paused: ResMut<PauseSwitch>) {
-    if args.step {
+fn toggle_pause(mut commands: Commands, mut paused: ResMut<PauseSwitch>) {
         match paused.0 {
             PauseState::Paused => (),
             PauseState::WaitFrame => {
@@ -107,12 +107,11 @@ fn toggle_pause(args: Res<Args>, mut commands: Commands, mut paused: ResMut<Paus
                 paused.0 = PauseState::WaitFrame;
             }
         }
-    }
 }
 
 fn keyboard_input(
     keys: Res<Input<KeyCode>>,
-    args: Res<Args>,
+    args: Res<cli::Args>,
     mut commands: Commands,
     mut paused: ResMut<PauseSwitch>,
 ) {
@@ -155,15 +154,4 @@ fn blinker_map(_size_x: i32, _size_y: i32) -> HashSet<(i32, i32)> {
     live_cells.insert((3, 1));
     live_cells.insert((3, 2));
     live_cells
-}
-
-use structopt::StructOpt;
-
-#[derive(Debug, StructOpt)]
-#[structopt(name = "blife", about = "A simple CLI for Conway's Game of Life")]
-pub struct Args {
-    /// start in step mode
-    /// (press space to advance one step)
-    #[structopt(short, long)]
-    pub step: bool,
 }
