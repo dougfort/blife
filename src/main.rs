@@ -15,21 +15,29 @@ enum PauseState {
 struct PauseSwitch(PauseState);
 
 fn main() {
-    App::new()
-        .insert_resource(WindowDescriptor {
-            title: "Game Of Life".to_string(),
-            width: 1300.,
-            height: 800.,
-            ..Default::default()
-        })
-        .add_plugins(DefaultPlugins)
-        .add_plugin(GameOfLife2dPlugin::default())
-        .insert_resource(SimulationBatch::default())
-        .add_startup_system(setup_camera)
-        .add_startup_system(setup_map)
-        .add_system(toggle_pause)
-        .add_system(keyboard_input)
-        .run();
+    let args = Args::from_args();
+    let step = args.step;
+
+    let mut app = App::new();
+
+    app.insert_resource(WindowDescriptor {
+        title: "Game Of Life".to_string(),
+        width: 1300.,
+        height: 800.,
+        ..Default::default()
+    })
+    .add_plugins(DefaultPlugins)
+    .insert_resource(args)
+    .add_plugin(GameOfLife2dPlugin::default())
+    .insert_resource(SimulationBatch::default())
+    .add_startup_system(setup_camera)
+    .add_startup_system(setup_map);
+
+    if step {
+        app.add_system(toggle_pause).add_system(keyboard_input);
+    }
+
+    app.run();
 }
 
 fn setup_camera(mut commands: Commands) {
@@ -37,17 +45,18 @@ fn setup_camera(mut commands: Commands) {
     commands.spawn_bundle(Camera2dBundle::default());
 }
 
-fn setup_map(mut commands: Commands) {
-    spawn_map(&mut commands);
+fn setup_map(mut commands: Commands, args: Res<Args>) {
+    spawn_map(&mut commands, &*args);
 }
 
-fn spawn_map(commands: &mut Commands) {
+fn spawn_map(commands: &mut Commands, args: &Args) {
     let (size_x, size_y) = (300, 200);
     let sprite_size = 4.;
     let color = Color::rgba(0., 0., 0., 0.);
     //    let live_cells = random_map(size_x, size_y);
-//    let live_cells = blinker_map(size_x, size_y);
-    let live_cells = pattern_file::load_pattern("patterns/glider.cells").expect("Unable to load pattern");
+    //    let live_cells = blinker_map(size_x, size_y);
+    let live_cells =
+        pattern_file::load_pattern("patterns/glider.cells").expect("Unable to load pattern");
 
     commands
         .spawn_bundle(SpatialBundle::from_transform(Transform::from_xyz(
@@ -78,31 +87,36 @@ fn spawn_map(commands: &mut Commands) {
                 }
             }
         });
-    commands.insert_resource(PauseSwitch(PauseState::Paused));
-    commands.insert_resource(SimulationPause);
+    if args.step {
+        commands.insert_resource(PauseSwitch(PauseState::Paused));
+        commands.insert_resource(SimulationPause);
+    }
 
     println!("map generated");
 }
 
-fn toggle_pause(mut commands: Commands, mut paused: ResMut<PauseSwitch>) {
-    match paused.0 {
-        PauseState::Paused => (),
-        PauseState::WaitFrame => {
-            commands.insert_resource(SimulationPause);
-            paused.0 = PauseState::Paused
-        }
-        PauseState::Unpaused => {
-            paused.0 = PauseState::WaitFrame;
+fn toggle_pause(args: Res<Args>, mut commands: Commands, mut paused: ResMut<PauseSwitch>) {
+    if args.step {
+        match paused.0 {
+            PauseState::Paused => (),
+            PauseState::WaitFrame => {
+                commands.insert_resource(SimulationPause);
+                paused.0 = PauseState::Paused
+            }
+            PauseState::Unpaused => {
+                paused.0 = PauseState::WaitFrame;
+            }
         }
     }
 }
 
 fn keyboard_input(
     keys: Res<Input<KeyCode>>,
+    args: Res<Args>,
     mut commands: Commands,
     mut paused: ResMut<PauseSwitch>,
 ) {
-    if keys.just_pressed(KeyCode::Space) {
+    if args.step && keys.just_pressed(KeyCode::Space) {
         match paused.0 {
             PauseState::Paused => {
                 commands.remove_resource::<SimulationPause>();
@@ -141,4 +155,15 @@ fn blinker_map(_size_x: i32, _size_y: i32) -> HashSet<(i32, i32)> {
     live_cells.insert((3, 1));
     live_cells.insert((3, 2));
     live_cells
+}
+
+use structopt::StructOpt;
+
+#[derive(Debug, StructOpt)]
+#[structopt(name = "blife", about = "A simple CLI for Conway's Game of Life")]
+pub struct Args {
+    /// start in step mode
+    /// (press space to advance one step)
+    #[structopt(short, long)]
+    pub step: bool,
 }

@@ -1,5 +1,5 @@
 [package]
-name = "bevy-life-dev"
+name = "blife"
 version = "0.1.0"
 edition = "2021"
 
@@ -19,6 +19,7 @@ auto-coloring = ["bevy/bevy_sprite"]
 
 [dependencies]
 anyhow = "1.0"
+structopt = "0.3"
 
 [dependencies.bevy_life]
 version  = "0.5.0"
