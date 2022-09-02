@@ -7,6 +7,10 @@ pub struct Args {
     /// (press space to advance one step)
     #[structopt(short, long)]
     pub step: bool,
+
+    /// load a pattern file
+    #[structopt(short, long, default_value = "")]
+    pub pattern_file: String,
 }
 
 pub fn parse_args() -> Args {

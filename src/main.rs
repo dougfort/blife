@@ -5,8 +5,8 @@ use bevy_life::{
 use rand::Rng;
 use std::collections::HashSet;
 
-mod pattern_file;
 mod cli;
+mod pattern_file;
 
 enum PauseState {
     Paused,
@@ -56,8 +56,11 @@ fn spawn_map(commands: &mut Commands, args: &cli::Args) {
     let color = Color::rgba(0., 0., 0., 0.);
     //    let live_cells = random_map(size_x, size_y);
     //    let live_cells = blinker_map(size_x, size_y);
-    let live_cells =
-        pattern_file::load_pattern("patterns/glider.cells").expect("Unable to load pattern");
+    let live_cells = if args.pattern_file.is_empty() {
+        random_map(size_x, size_y)
+    } else {
+        pattern_file::load_pattern(&args.pattern_file).expect("Unable to load pattern")
+    };
 
     commands
         .spawn_bundle(SpatialBundle::from_transform(Transform::from_xyz(
@@ -97,16 +100,16 @@ fn spawn_map(commands: &mut Commands, args: &cli::Args) {
 }
 
 fn toggle_pause(mut commands: Commands, mut paused: ResMut<PauseSwitch>) {
-        match paused.0 {
-            PauseState::Paused => (),
-            PauseState::WaitFrame => {
-                commands.insert_resource(SimulationPause);
-                paused.0 = PauseState::Paused
-            }
-            PauseState::Unpaused => {
-                paused.0 = PauseState::WaitFrame;
-            }
+    match paused.0 {
+        PauseState::Paused => (),
+        PauseState::WaitFrame => {
+            commands.insert_resource(SimulationPause);
+            paused.0 = PauseState::Paused
         }
+        PauseState::Unpaused => {
+            paused.0 = PauseState::WaitFrame;
+        }
+    }
 }
 
 fn keyboard_input(
@@ -139,19 +142,5 @@ fn random_map(size_x: i32, size_y: i32) -> HashSet<(i32, i32)> {
         }
     }
 
-    live_cells
-}
-
-fn zero_zero_map(_size_x: i32, _size_y: i32) -> HashSet<(i32, i32)> {
-    let mut live_cells: HashSet<(i32, i32)> = HashSet::new();
-    live_cells.insert((0, 0));
-    live_cells
-}
-
-fn blinker_map(_size_x: i32, _size_y: i32) -> HashSet<(i32, i32)> {
-    let mut live_cells: HashSet<(i32, i32)> = HashSet::new();
-    live_cells.insert((3, 0));
-    live_cells.insert((3, 1));
-    live_cells.insert((3, 2));
     live_cells
 }
