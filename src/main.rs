@@ -1,44 +1,35 @@
 use bevy::prelude::*;
+use iyes_loopless::prelude::*;
 use bevy_life::{
-    ConwayCellState, GameOfLife2dPlugin, MooreCell2d, SimulationBatch, SimulationPause,
+    ConwayCellState, GameOfLife2dPlugin, MooreCell2d, SimulationBatch,
 };
 use rand::Rng;
 use std::collections::HashSet;
 
 mod cli;
 mod pattern_file;
+mod pause;
+mod keyboard;
 
-enum PauseState {
-    Paused,
-    WaitFrame,
-    Unpaused,
-}
-struct PauseSwitch(PauseState);
+use pause::toggle_pause;
 
 fn main() {
-    let args = cli::parse_args();
-    let step = args.step;
-
-    let mut app = App::new();
-
-    app.insert_resource(WindowDescriptor {
-        title: "Game Of Life".to_string(),
-        width: 1300.,
-        height: 800.,
-        ..Default::default()
-    })
-    .add_plugins(DefaultPlugins)
-    .insert_resource(args)
-    .add_plugin(GameOfLife2dPlugin::default())
-    .insert_resource(SimulationBatch::default())
-    .add_startup_system(setup_camera)
-    .add_startup_system(setup_map);
-
-    if step {
-        app.add_system(toggle_pause).add_system(keyboard_input);
-    }
-
-    app.run();
+    App::new()
+        .insert_resource(WindowDescriptor {
+            title: "Game Of Life".to_string(),
+            width: 1300.,
+            height: 800.,
+            ..Default::default()
+        })
+        .add_plugins(DefaultPlugins)
+        .init_resource::<cli::Args>()
+        .add_plugin(GameOfLife2dPlugin::default())
+        .insert_resource(SimulationBatch::default())
+        .add_startup_system(setup_camera)
+        .add_startup_system(setup_map)
+        .add_system(toggle_pause.run_if(in_step_mode))
+        .add_system(keyboard::keyboard_input.run_if(in_step_mode))
+        .run();
 }
 
 fn setup_camera(mut commands: Commands) {
@@ -89,43 +80,8 @@ fn spawn_map(commands: &mut Commands, args: &cli::Args) {
                 }
             }
         });
-    if args.step {
-        commands.insert_resource(PauseSwitch(PauseState::Paused));
-        commands.insert_resource(SimulationPause);
-    }
 
     println!("map generated");
-}
-
-fn toggle_pause(mut commands: Commands, mut paused: ResMut<PauseSwitch>) {
-    match paused.0 {
-        PauseState::Paused => (),
-        PauseState::WaitFrame => {
-            commands.insert_resource(SimulationPause);
-            paused.0 = PauseState::Paused
-        }
-        PauseState::Unpaused => {
-            paused.0 = PauseState::WaitFrame;
-        }
-    }
-}
-
-fn keyboard_input(
-    keys: Res<Input<KeyCode>>,
-    args: Res<cli::Args>,
-    mut commands: Commands,
-    mut paused: ResMut<PauseSwitch>,
-) {
-    if args.step && keys.just_pressed(KeyCode::Space) {
-        match paused.0 {
-            PauseState::Paused => {
-                commands.remove_resource::<SimulationPause>();
-                paused.0 = PauseState::Unpaused;
-            }
-            PauseState::WaitFrame => (),
-            PauseState::Unpaused => (),
-        }
-    }
 }
 
 fn random_map(size_x: i32, size_y: i32) -> HashSet<(i32, i32)> {
@@ -141,4 +97,8 @@ fn random_map(size_x: i32, size_y: i32) -> HashSet<(i32, i32)> {
     }
 
     live_cells
+}
+
+fn in_step_mode(args: Res<cli::Args>) -> bool {
+    args.step
 }
