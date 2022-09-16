@@ -1,15 +1,13 @@
 use bevy::prelude::*;
+use bevy_life::{ConwayCellState, GameOfLife2dPlugin, MooreCell2d, SimulationBatch};
 use iyes_loopless::prelude::*;
-use bevy_life::{
-    ConwayCellState, GameOfLife2dPlugin, MooreCell2d, SimulationBatch,
-};
 use rand::Rng;
 use std::collections::HashSet;
 
 mod cli;
+mod keyboard;
 mod pattern_file;
 mod pause;
-mod keyboard;
 
 use pause::toggle_pause;
 
