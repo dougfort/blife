@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use structopt::StructOpt;
 
-use crate::pause::{PauseSwitch, PauseState};
+use crate::pause::{PauseState, PauseSwitch};
 use bevy_life::SimulationPause;
 
 #[derive(Debug, StructOpt)]
@@ -25,12 +25,6 @@ impl FromWorld for Args {
             world.insert_resource(PauseSwitch(PauseState::Paused));
             world.insert_resource(SimulationPause);
         }
-
-        // if args.step {
-        //     world
-        //         .add_system(toggle_pause)
-        //         .add_system(keyboard_input);
-        // }
 
         args
     }
